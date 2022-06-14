@@ -9,14 +9,14 @@ public class RoomNodeTypeListSO : ScriptableObject
         [Space(10)]
         [Header("Room Node Type List")]
         [Tooltip("このListはゲームの中にすべてのRoomNodeTypeSO,  enum の代わりです" )]
-        public List<RoomNodeTypeSO> RoomNodeTypeSoList;
+        public List<RoomNodeTypeSO> list;
         
         
         #if UNITY_EDITOR
 
         private void OnValidate()
         {
-                HelpUtility.ValidateCheckEnumerableValue(this, nameof(RoomNodeTypeSoList), RoomNodeTypeSoList);
+                HelpUtility.ValidateCheckEnumerableValue(this, nameof(list), list);
         }
 #endif
 }
