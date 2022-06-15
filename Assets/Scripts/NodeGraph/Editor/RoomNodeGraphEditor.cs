@@ -1,3 +1,4 @@
+using System;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -5,6 +6,7 @@ using UnityEngine;
 public class RoomNodeGraphEditor : EditorWindow
 {
     private GUIStyle _roomNodeStyle;
+    private GUIStyle _roomNodeSelectedStyle;
     private static RoomNodeGraphSO _currentRoomNodeGraph;
     private RoomNodeSO _currentRoomNode = null;
     private RoomNodeTypeListSO _roomNodeTypeList;
@@ -51,6 +53,8 @@ public class RoomNodeGraphEditor : EditorWindow
 
     private void OnEnable()
     {
+        Selection.selectionChanged += InspectorSelectionChanged;
+        
         //Define node Layout style レイアウト スタイルの定義
         _roomNodeStyle = new GUIStyle();
         _roomNodeStyle.normal.background = EditorGUIUtility.Load("node1") as Texture2D;
@@ -58,9 +62,22 @@ public class RoomNodeGraphEditor : EditorWindow
         _roomNodeStyle.padding = new RectOffset(_nodePadding, _nodePadding, _nodePadding, _nodePadding);
         _roomNodeStyle.border = new RectOffset(_nodeBorder, _nodeBorder, _nodeBorder, _nodeBorder);
 
+        _roomNodeSelectedStyle = new GUIStyle();
+        _roomNodeSelectedStyle.normal.background = EditorGUIUtility.Load("node1 on") as Texture2D;
+        _roomNodeSelectedStyle.normal.textColor = Color.white;
+        _roomNodeSelectedStyle.padding = new RectOffset(_nodePadding, _nodePadding, _nodePadding, _nodePadding);
+        _roomNodeSelectedStyle.border = new RectOffset(_nodeBorder, _nodeBorder, _nodeBorder, _nodeBorder);
+        
         //Load Room Node Type
         _roomNodeTypeList = GameResources.Instance.RoomNodeTypeList;
     }
+
+    private void OnDisable()
+    {
+        Selection.selectionChanged -= InspectorSelectionChanged;
+    }
+
+ 
 
     /// <summary>
     /// エディターを描画する
@@ -178,7 +195,16 @@ public class RoomNodeGraphEditor : EditorWindow
         {
             ShowContextMenu(currentEvent.mousePosition);
         }
+
+        if (currentEvent.button == 0)
+        {
+            ClearLineDrag();
+            ClearAllSelectedRoomNodes();
+        }
     }
+
+  
+
     /// <summary>
     /// processMouseDragEvent
     /// </summary>
@@ -228,6 +254,11 @@ public class RoomNodeGraphEditor : EditorWindow
 
     private void CreateRoomNode(object mousePositionObject)
     {
+        if (_currentRoomNodeGraph.RoomNodeList.Count == 0)
+        {
+            CreateRoomNode(new Vector2(200,200),_roomNodeTypeList.list.Find(x=>x.IsEntrance));
+        }
+        
         CreateRoomNode(mousePositionObject,_roomNodeTypeList.list.Find(x=>x.IsNone));
     }
 
@@ -254,6 +285,23 @@ public class RoomNodeGraphEditor : EditorWindow
         
         //refresh graph
         _currentRoomNodeGraph.OnValidate();
+    }
+    
+    /// <summary>
+    ///  Clear selection from all room node
+    /// </summary>
+    /// <exception cref="NotImplementedException"></exception>
+    private void ClearAllSelectedRoomNodes()
+    {
+        foreach (var roomNode in _currentRoomNodeGraph.RoomNodeList)
+        {
+            if (roomNode.IsSelected)
+            {
+                roomNode.IsSelected = false;
+
+                GUI.changed = true;
+            }
+        }
     }
 
     private void ProcessMouseUpEvent(Event currentEvent)
@@ -338,11 +386,30 @@ public class RoomNodeGraphEditor : EditorWindow
 
     private void DrawRoomNode()
     {
-        foreach (var roomNodeSo in _currentRoomNodeGraph.RoomNodeList)
+        foreach (var roomNode in _currentRoomNodeGraph.RoomNodeList)
         {
-            roomNodeSo.Draw(_roomNodeStyle);
+            if (roomNode.IsSelected)
+            {
+                roomNode.Draw(_roomNodeSelectedStyle);
+            }
+            else
+            {
+                roomNode.Draw(_roomNodeStyle);
+            }
         }
 
         GUI.changed = true;
+    }
+    
+    private void InspectorSelectionChanged()
+    {
+        RoomNodeGraphSO roomNodeGraph = Selection.activeObject as RoomNodeGraphSO;
+
+        if (roomNodeGraph != null)
+        {
+            _currentRoomNodeGraph = roomNodeGraph;
+
+            GUI.changed = true;
+        }
     }
 }
