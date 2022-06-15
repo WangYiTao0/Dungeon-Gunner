@@ -7,9 +7,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RoomNodeSO", menuName = "Scriptable Objects/Dungeon/RoomNodeSO", order = 0)]
 public class RoomNodeSO : ScriptableObject
 {
-        [HideInInspector] public string ID;
-        [HideInInspector] public List<string> ParentRoomNodeIDList = new List<string>();
-        [HideInInspector] public List<string> ChildRoomNodeIDList = new List<string>();
+         public string ID;
+         public List<string> ParentRoomNodeIDList = new List<string>();
+         public List<string> ChildRoomNodeIDList = new List<string>();
         [HideInInspector] public RoomNodeGraphSO RoomNodeGraph;
         public RoomNodeTypeSO RoomNodeType;
         [HideInInspector] public RoomNodeTypeListSO RoomNodeTypeList;
@@ -18,7 +18,8 @@ public class RoomNodeSO : ScriptableObject
         
 #if UNITY_EDITOR
         [HideInInspector] public Rect rect;
-        
+        [HideInInspector] public bool IsLeftClickDragging = false;
+        [HideInInspector] public bool IsSelected = false;
         public void Initialise(Rect rect, RoomNodeGraphSO currentRoomNodeGraph, RoomNodeTypeSO roomNodeTypeSo)
         {
                 this.rect =   rect;
@@ -64,9 +65,109 @@ public class RoomNodeSO : ScriptableObject
 
                 return roomArray;
         }
+        
+        
+        public void ProcessEvents(Event currentEvent)
+        {
+                switch (currentEvent.type)      
+                {
+                        case EventType.MouseDown:
+                                PocessMouseDownEvent(currentEvent);
+                                break;
+                        case EventType.MouseUp:
+                                ProcessMouseUpEvent(currentEvent);
+                                break;
+                        case EventType.MouseDrag:
+                                ProcessMouseDragEvent(currentEvent);
+                                break;
+                        default:
+                                break;
+                }
+        }
+        private void PocessMouseDownEvent(Event currentEvent)
+        {
+                if (currentEvent.button == 0)
+                {
+                        ProcessLeftClickDownEvent();
+                }
+                
+                if (currentEvent.button == 1)
+                {
+                        ProcessRightClickDownEvent(currentEvent);
+                }
+        }
+        
+        private void ProcessLeftClickDownEvent()
+        {
+               Selection.activeObject = this;
+
+               IsSelected = !IsSelected;
+        }
+        
+        private void ProcessRightClickDownEvent(Event currentEvent)
+        {
+                RoomNodeGraph.SetNodeToDrawConnectionLineFrom(this,currentEvent.mousePosition);
+        }
+
+        private void ProcessMouseUpEvent(Event currentEvent)
+        {
+                if (currentEvent.button == 0)
+                {
+                        ProcessLeftClickUpEvent();
+                }
+        }
+
+        private void ProcessLeftClickUpEvent()
+        {
+                if (IsLeftClickDragging)
+                {
+                        IsLeftClickDragging = false;
+                }
+        }
+
+        private void ProcessMouseDragEvent(Event currentEvent)
+        {
+                if (currentEvent.button == 0)
+                {
+                        ProcessLeftClickDragEvent(currentEvent);
+                }
+        }
+
+        private void ProcessLeftClickDragEvent(Event currentEvent)
+        {
+                IsLeftClickDragging = true;
+                DragNode(currentEvent.delta);
+                GUI.changed = true;
+        }
+
+        private void DragNode(Vector2 currentEventDelta)
+        {
+                rect.position += currentEventDelta;
+                
+                EditorUtility.SetDirty(this);
+        }
+
+        /// <summary>
+        /// add child ID to the Node( return true if the node has been added, false otherwise)
+        /// </summary>
+        /// <param name="childID"></param>
+        /// <returns></returns>
+        public bool AddChildRoomNodeIDToRoomNode(string childID)
+        {
+               ChildRoomNodeIDList.Add(childID);
+               return true;
+        }
+        
+        public bool AddParentRoomNodeIDToRoomNode(string parentID)
+        {
+                ParentRoomNodeIDList.Add(parentID);
+                return true;
+        }
+
 #endif
 
 
         #endregion
 
+ 
 }
