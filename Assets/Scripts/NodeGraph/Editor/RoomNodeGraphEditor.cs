@@ -9,8 +9,13 @@ public class RoomNodeGraphEditor : EditorWindow
     private GUIStyle _roomNodeStyle;
     private GUIStyle _roomNodeSelectedStyle;
     private static RoomNodeGraphSO _currentRoomNodeGraph;
+
+    private Vector2 _graphOffset;
+    private Vector2 _graphDrag;
+    
     private RoomNodeSO _currentRoomNode = null;
     private RoomNodeTypeListSO _roomNodeTypeList;
+
 
     //node layout value
     private const float _nodeWidth = 160f;
@@ -19,6 +24,9 @@ public class RoomNodeGraphEditor : EditorWindow
     private const int _nodeBorder = 12;
     private const float _connectingLineWidth = 3f;
     private const float _connetingLineArrowSize = 6f;
+    
+    private const float _gridlarge = 100f;
+    private const float _gridSmall = 25f;
 
     //エディターメニューの作成　pathを指定
     [MenuItem("Room Node Graph Editor", menuItem = "Dungeon/Dungeon Editor/Room Node Graph Editor")]
@@ -88,6 +96,9 @@ public class RoomNodeGraphEditor : EditorWindow
         // RoomNodeGraphSO が　選択されました
         if (_currentRoomNodeGraph != null)
         {
+            DragBackgroundGrid(_gridSmall, 0.2f, Color.gray);
+            DragBackgroundGrid(_gridlarge, 0.2f, Color.gray);
+            
             //Drag Line if being dragged
             DrawDraggedLine();
             
@@ -108,7 +119,33 @@ public class RoomNodeGraphEditor : EditorWindow
         
     }
 
-  
+    private void DragBackgroundGrid(float gridSize, float gridOpacity, Color gridColor)
+    {
+        int verticalLineCount = Mathf.CeilToInt((position.width + gridSize) / gridSize);
+        int horizontalLineCount = Mathf.CeilToInt((position.height + gridSize) / gridSize);
+
+        Handles.color = new Color(gridColor.r, gridColor.g, gridColor.b, gridOpacity);
+        
+        _graphOffset += _graphDrag * 0.5f;
+
+        Vector3 gridOffset = new Vector3(_graphOffset.x % gridSize, _graphOffset.y % gridSize, 0);
+
+        for (int i = 0; i < verticalLineCount; i++)
+        {
+            Handles.DrawLine(new Vector3(gridSize * i, -gridSize,0)+ gridOffset,
+                new Vector3(gridSize*i,position.height + gridSize,0f) + gridOffset);
+        }
+
+        for (int j = 0; j < horizontalLineCount; j++)
+        {
+            Handles.DrawLine(new Vector3(-gridSize, gridSize * j,0)+ gridOffset,
+                new Vector3(position.width + gridSize,gridSize * j) + gridOffset);
+        }
+
+        Handles.color = Color.white;
+    }
+
+
     private void DrawDraggedLine()
     {
         if (_currentRoomNodeGraph.LinePosition != Vector2.zero)
@@ -123,6 +160,9 @@ public class RoomNodeGraphEditor : EditorWindow
 
     private void ProcessEvents(Event currentEvent)
     {
+        //Reset graph drag
+        _graphDrag = Vector2.zero;
+        
         //get room not that mouse is over if it is null or not currently being drag
         if (_currentRoomNode == null || _currentRoomNode.IsLeftClickDragging == false)
         {
@@ -170,12 +210,11 @@ public class RoomNodeGraphEditor : EditorWindow
             case EventType.MouseDown:
                 ProcessMouseDownEvent(currentEvent);
                 break;
-            case EventType.MouseDrag:
-                ProcessMouseDragEvent(currentEvent);
-                break;
-            
             case EventType.MouseUp:
                 ProcessMouseUpEvent(currentEvent);
+                break;
+            case EventType.MouseDrag:
+                ProcessMouseDragEvent(currentEvent);
                 break;
             default:
                 break;
@@ -217,7 +256,13 @@ public class RoomNodeGraphEditor : EditorWindow
         {
             ProcessRightMouseDragEvent(currentEvent);
         }
+        
+        if (currentEvent.button == 0)
+        {
+            ProcessLeftMouseDragEvent(currentEvent.delta);
+        }
     }
+
     /// <summary>
     /// ProcessRightMouseDragEvent - draw line
     /// </summary>
@@ -232,6 +277,20 @@ public class RoomNodeGraphEditor : EditorWindow
             GUI.changed = true;
         }
     }
+    
+    private void ProcessLeftMouseDragEvent(Vector2 dragDelta)
+    {
+        _graphDrag = dragDelta;
+
+        for (int i = 0; i < _currentRoomNodeGraph.RoomNodeList.Count; i++)
+        {
+            _currentRoomNodeGraph.RoomNodeList[i].DragNode(dragDelta);
+        }
+        
+        GUI.changed = true;
+        
+    }
+    
     /// <summary>
     /// draw connecting line from room node
     /// </summary>

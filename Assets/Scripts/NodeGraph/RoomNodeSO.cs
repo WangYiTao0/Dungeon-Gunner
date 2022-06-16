@@ -177,8 +177,7 @@ public class RoomNodeSO : ScriptableObject
                 DragNode(currentEvent.delta);
                 GUI.changed = true;
         }
-
-        private void DragNode(Vector2 currentEventDelta)
+        public void DragNode(Vector2 currentEventDelta)
         {
                 rect.position += currentEventDelta;
                 
