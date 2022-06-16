@@ -7,9 +7,9 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "RoomNodeSO", menuName = "Scriptable Objects/Dungeon/RoomNodeSO", order = 0)]
 public class RoomNodeSO : ScriptableObject
 {
-         public string ID;
-         public List<string> ParentRoomNodeIDList = new List<string>();
-         public List<string> ChildRoomNodeIDList = new List<string>();
+        [HideInInspector] public string ID;
+        [HideInInspector] public List<string> ParentRoomNodeIDList = new List<string>();
+        [HideInInspector] public List<string> ChildRoomNodeIDList = new List<string>();
         [HideInInspector] public RoomNodeGraphSO RoomNodeGraph;
         public RoomNodeTypeSO RoomNodeType;
         [HideInInspector] public RoomNodeTypeListSO RoomNodeTypeList;
@@ -164,10 +164,100 @@ public class RoomNodeSO : ScriptableObject
         /// <returns></returns>
         public bool AddChildRoomNodeIDToRoomNode(string childID)
         {
-               ChildRoomNodeIDList.Add(childID);
-               return true;
+                //Check child node can be added validly to Parent
+                if (IsChildRoomValid(childID))
+                {
+                        ChildRoomNodeIDList.Add(childID); 
+                        return true; 
+                }
+
+                return false;
         }
-        
+
+        /// <summary>
+        /// Check child node can be added validly to Parent
+        /// </summary>
+        /// <param name="childID"></param>
+        /// <returns>return true if it can otherwise return false</returns>
+        private bool IsChildRoomValid(string childID)
+        {
+                bool isConnectedBossNodeAlready = false;
+                foreach (var roomNode in RoomNodeGraph.RoomNodeList)
+                {
+                        if (roomNode.RoomNodeType.IsBossRoom && roomNode.ParentRoomNodeIDList.Count > 0)
+                        {
+                                isConnectedBossNodeAlready = true;
+                        }
+                }
+
+                //BossRoomは1つだけです。
+                if (RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsBossRoom && isConnectedBossNodeAlready)
+                {
+                        return false;
+                }
+                // Can not Connect IsNone
+                if (RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsNone)
+                {
+                        return false;
+                }
+
+                // 重複connection を　防止する
+                if (ChildRoomNodeIDList.Contains(childID))
+                {
+                        return false;
+                }
+
+                //自分と自分のconnection を 防止する
+                if (ID == childID)
+                {
+                        return false;
+                }
+
+                //childID 元々はParentです。逆Connection　を防止する 
+                if (ParentRoomNodeIDList.Contains(childID))
+                {
+                        return false;
+                }
+
+                // every node should only have one parent
+                if (RoomNodeGraph.GetRoomNode(childID).ParentRoomNodeIDList.Count > 0)
+                {
+                        return false;
+                }
+
+                // Corridor と　IsCorridor のConnection　を防止する 
+                if (RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsCorridor && RoomNodeType.IsCorridor)
+                {
+                        return false;
+                }
+                
+                // room と　room のConnection　を防止する 
+                if (!RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsCorridor && !RoomNodeType.IsCorridor)
+                {
+                        return false;
+                }
+
+                // check max Corridor num
+                if (RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsCorridor &&
+                    ChildRoomNodeIDList.Count >= Settings.MaxChildCorridor)
+                {
+                        return false;
+                }
+
+                if (RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsEntrance)
+                {
+                        return false;
+                }
+                
+                //
+                if (!RoomNodeGraph.GetRoomNode(childID).RoomNodeType.IsCorridor && ChildRoomNodeIDList.Count > 0)
+                {
+                        return false;
+                }
+                
+                return true;
+        }
+
         public bool AddParentRoomNodeIDToRoomNode(string parentID)
         {
                 ParentRoomNodeIDList.Add(parentID);

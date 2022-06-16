@@ -28,6 +28,21 @@ public class RoomNodeGraphSO : ScriptableObject
        }
     }
 
+    /// <summary>
+    /// GetRoomNode
+    /// </summary>
+    /// <param name="roomNodeID"></param>
+    /// <returns> IDは存在だったら、return RoomNodeSO else return null </returns>
+    public RoomNodeSO GetRoomNode(string roomNodeID)
+    {
+        if (RoomNodeDictionary.TryGetValue(roomNodeID, out RoomNodeSO roomNode))
+        {
+            return roomNode;
+        }
+
+        return null;
+    }
+
 #if UNITY_EDITOR
 
     [HideInInspector] public RoomNodeSO RoomNodeToDrawLineFrom = null;
