@@ -1,0 +1,35 @@
+﻿@startuml
+class RoomNodeGraphEditor{
+    
+}
+
+class RoomNodeGraphSO{
+}
+
+Class RoomNodeSO{
+    public string ID;
+    public List<string> ParentRoomNodeIDList = new List<string>();
+    public List<string> ChildRoomNodeIDList = new List<string>();
+    public RoomNodeGraphSO RoomNodeGraph;
+    public RoomNodeTypeSO RoomNodeType;
+    public RoomNodeTypeListSO RoomNodeTypeList;
+    
+    public Rect rect;
+    public bool IsLeftClickDragging = false;
+    public bool IsSelected = false;
+}
+
+class RoomNodeTypeSO{
+    public string RoomNodeTypeName;
+    public bool DisplayerInNodeGraphEditor = true;
+    public bool IsCorridor;
+    public bool IsCorridorNS;
+    public bool IsCorridorEW;
+    public bool IsEntrance;
+    public bool IsBossRoom;
+    public bool IsNone;
+    private void OnValidate(){ }
+}
+RoomNodeGraphSO *-- RoomNodeSO 
+RoomNodeSO *-- RoomNodeTypeSO
+@enduml
